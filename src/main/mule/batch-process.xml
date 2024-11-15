@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="727f981f-33f5-4ba5-b0fa-1b56468d1be1" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="batch-processFlow" doc:id="b29836a3-df65-40e1-83af-7fd35c57dfd7" >
+		<http:listener doc:name="Listener" doc:id="ff94d3e1-ba3f-481b-8879-8f74e2905b68" config-ref="HTTP_Listener_config" path="test"/>
+		<ee:transform doc:name="Transform Message" doc:id="5e383608-dc58-49c9-88d7-4c6976038514" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+5 to 10 // generates an array.]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="beforeBatchJob" ><![CDATA[%dw 2.0
+output application/java
+---
+100]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<batch:job jobName="batch-processBatch_Job" doc:id="5d9948c0-40bc-4a80-9237-0dea52208f75">
+			<batch:process-records >
+				<batch:step name="Batch_Step" doc:id="1784ab97-4335-46dd-b18e-154626051593" >
+					<logger level="INFO" doc:name="Logger" doc:id="07d6022d-5c97-4b41-aa40-2f406db69d8a" message='#["Batch Job Step-1 payload is :: " ++ payload]'/>
+					<ee:transform doc:name="Transform Message" doc:id="9bc8b784-60fe-40b2-bfad-11b48492846f" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+vars.beforeBatchJob + payload]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<ee:transform doc:name="Transform Message" doc:id="55824b86-d5e1-43bb-901a-f1a7fd31b5da" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload + vars.beforeBatchJob]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<logger level="INFO" doc:name="Logger" doc:id="3176fb4a-3609-4adb-99d9-0c2395ca97ee" message='#["addition after batch step - 1 " ++ payload]' />
+				</batch:step>
+				<batch:step name="Batch_Step1" doc:id="7c440ca2-0512-4035-8ac1-5473de623178" >
+					<logger level="INFO" doc:name="Logger" doc:id="982ab65e-28e0-4cbd-bfbb-5521aecbcc78" message='#["Batch-Step 2 payload is :: " ++ payload]'/>
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete >
+				<logger level="INFO" doc:name="Logger" doc:id="c3fd8481-31f4-43b2-a7ba-4e926b162255" message="#[payload]"/>
+			</batch:on-complete>
+		</batch:job>
+		<ee:transform doc:name="Transform Message" doc:id="55dbcd73-1b55-429f-b354-f4cafc67cc98" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
